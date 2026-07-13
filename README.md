@@ -216,13 +216,6 @@ Contributions and improvements are welcome. To contribute:
 2. Document any new functions or hardware additions
 3. Provide both hardware schematics and code for complex features
 4. Include test sketches for new components
-
----
-
-## License
-
-Specify LICENSE in repository root. If undefined, all rights reserved by default.
-
 ---
 
 ## Contact
