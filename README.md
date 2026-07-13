@@ -1,156 +1,236 @@
 # Maison à Basse Consommation
 
-A C++ project to model and simulate a low-energy house (Maison à Basse Consommation — MBC). This repository contains the source code, example configurations, and build scripts to run thermal and energy-consumption simulations for a residential building.
+An embedded systems project for an energy-efficient house model featuring Arduino-based thermal monitoring and environmental control.
 
-> Project name is in French; the README is written in English for broader accessibility. If you prefer French, I can provide a translated version.
+> **Project Status**: Active development with modular hardware integration for temperature sensing, climate control, and automated systems.
 
 ---
 
-## Table of Contents
+## 📋 Table of Contents
 
 - [About](#about)
-- [Features](#features)
-- [Repository structure](#repository-structure)
-- [Prerequisites](#prerequisites)
-- [Build](#build)
-- [Run](#run)
-- [Configuration & Examples](#configuration--examples)
-- [Testing](#testing)
-- [Contributing](#contributing)
-- [Roadmap](#roadmap)
+- [Project Structure](#project-structure)
+- [Hardware Components](#hardware-components)
+- [Getting Started](#getting-started)
+- [Key Features](#key-features)
+- [Contributors](#contributors)
 - [License](#license)
-- [Contact](#contact)
 
 ---
 
 ## About
 
-Maison à Basse Consommation (MBC) is a C++ simulation project focused on modelling the thermal behaviour and energy use of a single-family house. It can be used for:
+**Maison à Basse Consommation** is an instrumentation project designed to simulate and monitor the thermal behavior of a low-energy residential building. The system integrates multiple sensors and actuators to model seasonal scenarios (winter/summer) and evaluate energy consumption through automated control of heating, cooling, and ventilation systems.
 
-- Evaluating insulation and glazing options
-- Comparing HVAC strategies
-- Producing time-series outputs for further analysis and plotting
-
-## Features
-
-- Modular C++ codebase for thermal and energy models
-- Configurable building parameters (envelope, windows, HVAC, occupancy)
-- Exportable CSV/JSON results
-- Example scenarios to reproduce typical seasonal cases
-
-## Repository structure
-
-- `src/` — C++ sources
-- `include/` — public headers (if present)
-- `examples/` — configuration files and example inputs
-- `build/` — out-of-source build directory (not committed)
-- `tests/` — unit and integration tests
-- `tools/` — helper scripts (plotting, data conversion)
-- `CMakeLists.txt` — CMake build configuration
-- `README.md` — this file
-
-Update the above if your repository uses a different layout.
-
-## Prerequisites
-
-- C++17-capable compiler (GCC >= 9, Clang >= 10, MSVC with C++17 support)
-- CMake >= 3.10 (recommended)
-- Optional: Python 3 and matplotlib for plotting results
-
-## Build
-
-Using CMake (recommended):
-
-```bash
-# from repository root
-mkdir -p build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
-cmake --build . --config Release
-```
-
-Simple single-file build (if the project is small):
-
-```bash
-g++ -std=c++17 -O2 -Wall -Iinclude -o mbc_sim src/main.cpp
-```
-
-The produced executable is typically placed in `build/` or the project root depending on your build system.
-
-## Run
-
-Basic usage (replace `mbc_sim` and paths with actual names used in your project):
-
-```bash
-./build/mbc_sim --config ../examples/winter_case.json --output results/winter.csv
-```
-
-Example: generate results and plot with Python
-
-```bash
-python3 tools/plot_results.py results/winter.csv
-```
-
-Document the available command-line options or config file schema in `docs/` or in `examples/`.
-
-## Configuration & Examples
-
-Place JSON/YAML configuration files in `examples/` describing:
-
-- Building geometry and areas
-- Construction layers and U-values
-- Window areas and solar gains
-- Internal gains and occupancy schedules
-- HVAC setpoints and efficiencies
-
-Provide at least two example scenarios (winter / summer) to help users validate the model.
-
-## Testing
-
-If tests are provided (recommended), build and run them with CTest:
-
-```bash
-cd build
-ctest --output-on-failure
-```
-
-Or run the test executable directly:
-
-```bash
-./tests/run_tests
-```
-
-Include unit tests for numerical components and regression tests for whole-case scenarios.
-
-## Contributing
-
-Contributions are welcome. Suggested workflow:
-
-1. Fork the repository.
-2. Create a branch: `git checkout -b feat/your-feature`.
-3. Add tests for your changes.
-4. Run the test suite and ensure all checks pass.
-5. Open a pull request with a clear description and motivation.
-
-Please follow a consistent code style (e.g., clang-format) and add or update documentation when public APIs change.
-
-## Roadmap
-
-- Add continuous integration (GitHub Actions) for build and tests
-- Improve documentation and add an `API.md` for core modules
-- Add more example scenarios and visualization tools
-
-## License
-
-Add a `LICENSE` file to this repository to indicate the license you want to use (e.g., MIT, Apache-2.0). If there is no license file, all rights are reserved by default.
-
-## Contact
-
-Maintainer: tedjelmoulksn-dotcom
+### Project Team
+- Greg ALBERTS
+- Sarah DAHMOUN
+- Hugo LEBAUD
+- Tedj El Moulk SINACER
 
 ---
 
-Notes:
-- I updated README.md with a professional, actionable template. If you'd like, I can also:
-  - Translate this README to French,
-  - Add badges (build status, license) with working links,
-  - Create CONTRIBUTING.md and a GitHub Actions workflow for CI.
+## Project Structure
+
+```
+Maison_a_basse_consommation/
+├── Maison energetique/
+│   ├── Projet_Maison_Energetique.ino           # Main Arduino sketch
+│   ├── Projet_Maison_Energetique(1).ino        # Alternative configuration
+│   ├── Projet_Maison_Energetique(3).ino        # Advanced variant
+│   ├── TCN75A.h                                # Temperature sensor header
+│   ├── TCN75A.cpp                              # Temperature sensor implementation
+│   ├── I2C_Scanning_Code.ino                   # I2C device discovery utility
+│   ├── Test_temperature_sensor.ino             # Temperature sensor test
+│   ├── moteur_pas_a_pas_test.ino               # Stepper motor test
+│   ├── peltier.ino                             # Peltier module control
+│   ├── peltier(1).ino                          # Alternative Peltier configuration
+│   ├── stepper_turning.ino                     # Stepper motor control
+│   ├── Test_Coffret_Conception...f3d           # CAD design files (Fusion 360)
+│   ├── Enrouleur_MPAP v2.stl                   # 3D model for roller module
+│   └── Schéma_électrique.pdn                   # Electrical schematic
+└── README.md
+```
+
+---
+
+## Hardware Components
+
+The system integrates the following components:
+
+| Component | Function | Control |
+|-----------|----------|---------|
+| **TCN75A** | I2C Temperature Sensor | Digital readout (±0.5°C resolution) |
+| **Peltier Module** | Thermoelectric cooling/heating | PWM (Pin 3) |
+| **Heating Resistor** | Thermal heating element | PWM (Pin 4) |
+| **Solar Simulator** | Artificial solar radiation | PWM (Pin 5) |
+| **Fan** | Air circulation/ventilation | PWM (Pin 6) |
+| **Stepper Motor** | Automated blind/damper control | Digital control |
+| **Status LEDs** | Winter/Summer mode indicators | Digital (Pins 9-10) |
+| **Mode Buttons** | Season selection switches | Digital (Pins 7-8) |
+| **LCD Display** | 20x4 I2C Display | I2C (Real-time monitoring) |
+| **Potentiometer** | Manual control parameter | Analog (Pin 11) |
+
+---
+
+## Key Features
+
+- **Temperature Monitoring**: Real-time thermal data acquisition via TCN75A I2C sensor
+- **Multi-Stage Climate Control**: 
+  - Peltier-based cooling
+  - Resistive heating
+  - Forced convection (fan)
+- **Thermal Simulation**: Models winter and summer seasonal scenarios
+- **Modular Architecture**: Separated component drivers and test utilities
+- **LCD Dashboard**: Live temperature and system status display
+- **PWM-based Control**: Precise power management for all actuators
+- **Configurable Thresholds**: Adjustable temperature set-points and hysteresis
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- **Arduino IDE** (1.8.0 or later)
+- **Arduino-compatible microcontroller** (Uno, Mega, etc.)
+- **Required Libraries**:
+  - `Wire.h` (I2C communication) — built-in
+  - `LiquidCrystal_I2C.h` — install via Arduino IDE Library Manager
+  - `TCN75A.h` — included in repository
+
+### Installation
+
+1. **Clone or download** this repository
+2. **Open Arduino IDE** and navigate to:
+   - File → Preferences → Additional Board Manager URLs
+   - Add repository link if using custom board
+3. **Install Dependencies**:
+   - Sketch → Include Library → Manage Libraries
+   - Search for and install `LiquidCrystal_I2C`
+4. **Verify I2C Devices**:
+   - Upload `I2C_Scanning_Code.ino` to identify connected devices
+   - Open Serial Monitor (9600 baud) to view device addresses
+
+### Upload Main Program
+
+1. Open `Projet_Maison_Energetique.ino` in Arduino IDE
+2. Select Tools → Board and Port (match your hardware)
+3. Click Upload (→ arrow button)
+
+### Test Individual Components
+
+Before running the full system, test components individually:
+
+```bash
+# Temperature sensor
+→ Upload: Test_temperature_sensor.ino
+
+# Stepper motor
+→ Upload: moteur_pas_a_pas_test.ino
+
+# Peltier module
+→ Upload: peltier.ino
+
+# PWM devices
+→ Uncomment test functions in main sketch
+```
+
+---
+
+## Usage
+
+### Main Sketch Operation
+
+The `Projet_Maison_Energetique.ino` sketch provides:
+
+**Uncomment functions in `loop()` to enable:**
+- `fonctionTest_TemperatureSensor()` — Read temperature every 500ms
+- `fonctionTest_Peltier(255)` — Activate cooling at full power
+- `fonctionTest_ResistanceChauffante(255)` — Activate heating at full power
+- `fonctionTest_Soleil(255)` — Activate solar simulator
+- `fonctionTest_Ventilateur(255)` — Activate fan
+- `fonctionTest_Lcd()` — Display test patterns on LCD
+- `fonctionTest_Led()` — Blink status LEDs
+- `fonctionTest_Bouton()` — Monitor button states
+- `fonctionTest_Potentiometre()` — Read potentiometer position
+
+### PWM Control
+
+Control system power via PWM values (0–255):
+
+```cpp
+fonctionProjet_PWM("PELTIER", 200);      // 78% cooling power
+fonctionProjet_PWM("RESISTANCE", 150);   // 59% heating power
+fonctionProjet_PWM("SOLEIL", 255);       // Full solar simulation
+fonctionProjet_PWM("VENTILATEUR", 100);  // 39% fan speed
+```
+
+### Temperature Monitoring
+
+```cpp
+float t = tcn.readTemperature();  // Read current temperature
+tcn.setRangeTemp(18.0, 25.0);     // Set hysteresis (18°C) and limit (25°C)
+```
+
+### Serial Output
+
+Sensor data and diagnostics are printed to Serial Monitor at **9600 baud**:
+
+```
+Temperature : 22.5
+position_Potentiometre : 128
+Bouton_Hiver : LOW
+```
+
+---
+
+## Technical Notes
+
+### I2C Addresses
+
+- **TCN75A Sensor**: `0x48`
+- **LCD Display**: `0x27`
+
+### PWM Output Pins
+
+- Pin 3: Peltier module
+- Pin 4: Heating resistor
+- Pin 5: Solar simulator
+- Pin 6: Fan motor
+
+### Temperature Sensor Specifications
+
+- **Range**: -40°C to +125°C
+- **Resolution**: 9-bit to 12-bit configurable
+- **Accuracy**: ±0.5°C (typical)
+- **Interface**: I2C (TWI)
+
+---
+
+## Contributing
+
+Contributions and improvements are welcome. To contribute:
+
+1. Test changes on physical hardware before submitting
+2. Document any new functions or hardware additions
+3. Provide both hardware schematics and code for complex features
+4. Include test sketches for new components
+
+---
+
+## License
+
+Specify LICENSE in repository root. If undefined, all rights reserved by default.
+
+---
+
+## Contact
+
+**Repository**: [tedjelmoulksn-dotcom/Maison_a_basse_consommation](https://github.com/tedjelmoulksn-dotcom/Maison_a_basse_consommation)
+
+**Questions or Issues**: Open an issue on GitHub
+
+---
+
+*Last Updated: July 2026 | Language: C++/Arduino*
