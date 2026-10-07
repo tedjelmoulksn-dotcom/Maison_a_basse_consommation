@@ -2,7 +2,7 @@
 
 Maquette de démonstration d'une habitation sobre en énergie : une petite maison en bois dont la température intérieure est pilotée par une carte Arduino Mega, avec deux modes (hiver et été) qui simulent les conditions extérieures.
 
-![Poster du projet : contexte, stratégie, montage électrique et schéma bloc](assets/poster_maison_basse_consommation.jpg)
+![Poster du projet : contexte, stratégie, montage électrique et schéma bloc](documentation/poster_maison_basse_consommation.jpg)
 
 *Poster du projet. Il présente le contexte, le matériel, le montage électrique et la logique des modes été et hiver ; le reste de cette page complète ce qu'il ne dit pas.*
 
