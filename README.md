@@ -1,229 +1,134 @@
-# Maison à Basse Consommation
+# Maison à basse consommation — maquette de régulation thermique
 
-An embedded systems project for an energy-efficient house model featuring Arduino-based thermal monitoring and environmental control.
+Maquette de démonstration d'une habitation sobre en énergie : une petite maison en bois dont la température intérieure est pilotée par une carte Arduino Mega, avec deux modes (hiver et été) qui simulent les conditions extérieures.
 
-> **Project Status**: Active development with modular hardware integration for temperature sensing, climate control, and automated systems.
+![Maison peinte posée sur sa base](assets/maison_peinte_sur_base.jpg)
 
----
+*La maison posée sur sa base, qui contient l'alimentation et l'électronique.*
 
-## 📋 Table of Contents
+## Objectif et contexte
 
-- [About](#about)
-- [Project Structure](#project-structure)
-- [Hardware Components](#hardware-components)
-- [Getting Started](#getting-started)
-- [Key Features](#key-features)
-- [Contributors](#contributors)
-- [License](#license)
+Le bâtiment représente une part importante de la consommation d'énergie. Le projet consistait à construire une maquette qui montre, à petite échelle, comment des leviers simples (volet automatique, chauffage piloté, circulation d'air) permettent de tenir une température de consigne.
 
----
+- **Cadre** : projet d'instrumentation de deuxième année du cycle ingénieur, spécialité Instrumentation et Systèmes Embarqués, Sup Galilée (Université Sorbonne Paris Nord), année 2024–2025.
+- **Équipe** : groupe de quatre étudiants, encadré par un enseignant-chercheur.
+- **Grandeur régulée** : la température intérieure, avec une plage visée de 21 à 23 °C.
 
-## About
+## État du projet
 
-**Maison à Basse Consommation** is an instrumentation project designed to simulate and monitor the thermal behavior of a low-energy residential building. The system integrates multiple sensors and actuators to model seasonal scenarios (winter/summer) and evaluate energy consumption through automated control of heating, cooling, and ventilation systems.
+Maquette construite, câblée et présentée en mai 2025. Les composants ont été testés un par un et le programme d'intégration fonctionne. En revanche, la régulation complète n'a pas pu être validée par des essais : le montage électrique final a été terminé trop tard (voir « Essais et résultats »).
 
-### Project Team
-- Greg ALBERTS
-- Sarah DAHMOUN
-- Hugo LEBAUD
-- Tedj El Moulk SINACER
+## Ma contribution
 
----
+Travail réalisé à quatre. D'après la répartition des tâches du rapport, j'ai pris en charge :
 
-## Project Structure
+- le **volet roulant** : découpe, pose et programmation de sa commande par moteur pas à pas ;
+- la pose du capteur de température et de la résistance chauffante ;
+- une partie du câblage, de l'assemblage et de la peinture de la maison ;
+- avec le reste du groupe, le programme général été/hiver.
 
-```
-Maison_a_basse_consommation/
-├── Maison energetique/
-│   ├── Projet_Maison_Energetique.ino           # Main Arduino sketch
-│   ├── Projet_Maison_Energetique(1).ino        # Alternative configuration
-│   ├── Projet_Maison_Energetique(3).ino        # Advanced variant
-│   ├── TCN75A.h                                # Temperature sensor header
-│   ├── TCN75A.cpp                              # Temperature sensor implementation
-│   ├── I2C_Scanning_Code.ino                   # I2C device discovery utility
-│   ├── Test_temperature_sensor.ino             # Temperature sensor test
-│   ├── moteur_pas_a_pas_test.ino               # Stepper motor test
-│   ├── peltier.ino                             # Peltier module control
-│   ├── peltier(1).ino                          # Alternative Peltier configuration
-│   ├── stepper_turning.ino                     # Stepper motor control
-│   ├── Test_Coffret_Conception...f3d           # CAD design files (Fusion 360)
-│   ├── Enrouleur_MPAP v2.stl                   # 3D model for roller module
-│   └── Schéma_électrique.pdn                   # Electrical schematic
-└── README.md
-```
+La façade de contrôle, la lampe, le module Peltier, la conception 3D et l'asservissement de la résistance ont été menés par les autres membres.
 
----
+## Matériel et technologies
 
-## Hardware Components
+| Élément | Détail |
+|---|---|
+| Carte | Arduino Mega |
+| Capteur | Température TCN75A en I2C (adresse 0x48) |
+| Chauffage intérieur | Résistance chauffante commandée en PWM |
+| « Soleil » | Ampoule halogène 100 W commandée en PWM, inclinable par servomoteur |
+| Froid extérieur | Module Peltier commandé en PWM |
+| Circulation d'air | Ventilateurs dans la maison et dans la base |
+| Volet | Enrouleur imprimé en 3D, entraîné par un moteur pas à pas |
+| Interface | Écran LCD I2C 20×4 (adresse 0x27), boutons hiver et été, LED de mode, potentiomètre |
+| Puissance | Étages à MOSFET, alimentation dédiée logée dans la base |
+| Logiciels | IDE Arduino (C++), Fusion 360 pour les pièces imprimées |
+| Bibliothèques | `Wire`, `LiquidCrystal_I2C`, `CheapStepper`, et `TCN75A` (fichiers fournis dans le dossier du programme) |
 
-The system integrates the following components:
+![Schéma de la commande de puissance par MOSFET](assets/schema_commande_puissance_mosfet.jpg)
 
-| Component | Function | Control |
-|-----------|----------|---------|
-| **TCN75A** | I2C Temperature Sensor | Digital readout (±0.5°C resolution) |
-| **Peltier Module** | Thermoelectric cooling/heating | PWM (Pin 3) |
-| **Heating Resistor** | Thermal heating element | PWM (Pin 4) |
-| **Solar Simulator** | Artificial solar radiation | PWM (Pin 5) |
-| **Fan** | Air circulation/ventilation | PWM (Pin 6) |
-| **Stepper Motor** | Automated blind/damper control | Digital control |
-| **Status LEDs** | Winter/Summer mode indicators | Digital (Pins 9-10) |
-| **Mode Buttons** | Season selection switches | Digital (Pins 7-8) |
-| **LCD Display** | 20x4 I2C Display | I2C (Real-time monitoring) |
-| **Potentiometer** | Manual control parameter | Analog (Pin 11) |
+*Schéma de principe de la commande en PWM des charges de puissance par MOSFET.*
 
----
+## Fonctionnement prévu
 
-## Key Features
+Deux boutons sur la façade choisissent le mode.
 
-- **Temperature Monitoring**: Real-time thermal data acquisition via TCN75A I2C sensor
-- **Multi-Stage Climate Control**: 
-  - Peltier-based cooling
-  - Resistive heating
-  - Forced convection (fan)
-- **Thermal Simulation**: Models winter and summer seasonal scenarios
-- **Modular Architecture**: Separated component drivers and test utilities
-- **LCD Dashboard**: Live temperature and system status display
-- **PWM-based Control**: Precise power management for all actuators
-- **Configurable Thresholds**: Adjustable temperature set-points and hysteresis
+**Mode hiver.** Le module Peltier refroidit l'extérieur simulé (intensité réglable au potentiomètre) et la lampe est faible et basse. La résistance chauffe l'intérieur. Sous 21 °C le volet s'ouvre, au-dessus de 23 °C il se ferme. Une régulation PI sur la résistance doit maintenir la consigne.
 
----
+**Mode été.** La lampe est forte et haute. Au-dessus de 21 °C le volet se ferme pour limiter les apports ; en dessous il s'ouvre. Une plaque noire interchangeable sur le mur du fond permet de comparer l'effet d'un mur sombre et d'un mur clair.
 
-## Getting Started
+L'écran affiche la température et une LED indique le mode actif.
 
-### Prerequisites
+![Façade de contrôle avec écran LCD](assets/facade_controle_lcd.jpg)
 
-- **Arduino IDE** (1.8.0 or later)
-- **Arduino-compatible microcontroller** (Uno, Mega, etc.)
-- **Required Libraries**:
-  - `Wire.h` (I2C communication) — built-in
-  - `LiquidCrystal_I2C.h` — install via Arduino IDE Library Manager
-  - `TCN75A.h` — included in repository
+*Façade de contrôle imprimée en 3D : écran, boutons hiver et été, potentiomètre.*
 
-### Installation
+## Ce que fait le code de ce dépôt
 
-1. **Clone or download** this repository
-2. **Open Arduino IDE** and navigate to:
-   - File → Preferences → Additional Board Manager URLs
-   - Add repository link if using custom board
-3. **Install Dependencies**:
-   - Sketch → Include Library → Manage Libraries
-   - Search for and install `LiquidCrystal_I2C`
-4. **Verify I2C Devices**:
-   - Upload `I2C_Scanning_Code.ino` to identify connected devices
-   - Open Serial Monitor (9600 baud) to view device addresses
+`Projet_Maison_Energetique.ino` est le programme d'intégration :
 
-### Upload Main Program
+- lecture des boutons hiver et été, allumage de la LED correspondante ;
+- commande en PWM de la résistance, de la lampe, du Peltier et des ventilateurs, avec des valeurs fixes selon le mode ;
+- lecture du capteur TCN75A et affichage de la température sur l'écran LCD et sur le port série ;
+- fonction de descente puis remontée du volet par le moteur pas à pas ;
+- fonctions de test pour chaque composant (capteur, moteur, Peltier, résistance, lampe, ventilateur, LCD, LED, boutons, potentiomètre).
 
-1. Open `Projet_Maison_Energetique.ino` in Arduino IDE
-2. Select Tools → Board and Port (match your hardware)
-3. Click Upload (→ arrow button)
+La régulation PI et l'ouverture du volet selon les seuils de 21 et 23 °C sont décrites dans le rapport mais **ne sont pas implémentées dans cette version du code**.
 
-### Test Individual Components
+![Enrouleur du volet et moteur pas à pas en test](assets/volet_enrouleur_moteur_pas_a_pas.jpg)
 
-Before running the full system, test components individually:
+*Enrouleur du volet entraîné par le moteur pas à pas, en test sur table.*
 
-```bash
-# Temperature sensor
-→ Upload: Test_temperature_sensor.ino
-
-# Stepper motor
-→ Upload: moteur_pas_a_pas_test.ino
-
-# Peltier module
-→ Upload: peltier.ino
-
-# PWM devices
-→ Uncomment test functions in main sketch
-```
-
----
-
-## Usage
-
-### Main Sketch Operation
-
-The `Projet_Maison_Energetique.ino` sketch provides:
-
-**Uncomment functions in `loop()` to enable:**
-- `fonctionTest_TemperatureSensor()` — Read temperature every 500ms
-- `fonctionTest_Peltier(255)` — Activate cooling at full power
-- `fonctionTest_ResistanceChauffante(255)` — Activate heating at full power
-- `fonctionTest_Soleil(255)` — Activate solar simulator
-- `fonctionTest_Ventilateur(255)` — Activate fan
-- `fonctionTest_Lcd()` — Display test patterns on LCD
-- `fonctionTest_Led()` — Blink status LEDs
-- `fonctionTest_Bouton()` — Monitor button states
-- `fonctionTest_Potentiometre()` — Read potentiometer position
-
-### PWM Control
-
-Control system power via PWM values (0–255):
-
-```cpp
-fonctionProjet_PWM("PELTIER", 200);      // 78% cooling power
-fonctionProjet_PWM("RESISTANCE", 150);   // 59% heating power
-fonctionProjet_PWM("SOLEIL", 255);       // Full solar simulation
-fonctionProjet_PWM("VENTILATEUR", 100);  // 39% fan speed
-```
-
-### Temperature Monitoring
-
-```cpp
-float t = tcn.readTemperature();  // Read current temperature
-tcn.setRangeTemp(18.0, 25.0);     // Set hysteresis (18°C) and limit (25°C)
-```
-
-### Serial Output
-
-Sensor data and diagnostics are printed to Serial Monitor at **9600 baud**:
+## Organisation du dépôt
 
 ```
-Temperature : 22.5
-position_Potentiometre : 128
-Bouton_Hiver : LOW
+arduino/Projet_Maison_Energetique/   Programme d'intégration et pilote du capteur TCN75A
+arduino/peltier/                     Essai du module Peltier
+arduino/moteur_pas_a_pas_test/       Essai du moteur pas à pas
+arduino/stepper_turning/             Essai de rotation du moteur pas à pas
+arduino/Test_temperature_sensor/     Essai du capteur de température
+cad/                                 Fichiers Fusion 360 (enrouleur du volet, coffret)
+assets/                              Photos de la maquette, vues 3D et schéma
 ```
 
----
+## Installation et utilisation
 
-## Technical Notes
+1. Installer l'IDE Arduino, puis les bibliothèques `LiquidCrystal I2C` et `CheapStepper` depuis le gestionnaire de bibliothèques.
+2. Ouvrir `arduino/Projet_Maison_Energetique/` ; les fichiers `TCN75A.h` et `TCN75A.cpp` doivent rester dans ce dossier.
+3. Sélectionner la carte Arduino Mega et le port, puis téléverser.
+4. Appuyer sur le bouton hiver ou été de la façade.
 
-### I2C Addresses
+Brochage (d'après le code) : Peltier 12, résistance 11, lampe 10, ventilateur 13, servomoteur de la lampe 4, boutons 2 et 3, LED 50 et 37, potentiomètre A0, moteur pas à pas 32/28/30/22, capteur et écran sur le bus I2C.
 
-- **TCN75A Sensor**: `0x48`
-- **LCD Display**: `0x27`
+> La compilation et le téléversement n'ont pas été rejoués lors de la mise en forme de ce dépôt. Le croquis `Test_temperature_sensor` peut nécessiter une copie des fichiers `TCN75A` dans son dossier.
 
-### PWM Output Pins
+## Essais et résultats
 
-- Pin 3: Peltier module
-- Pin 4: Heating resistor
-- Pin 5: Solar simulator
-- Pin 6: Fan motor
+- Chaque composant a été essayé séparément avec les croquis de test.
+- **Aucune mesure de régulation en conditions réelles n'a été faite.** Le rapport le précise : les tableaux de température qu'il contient (modes été et hiver, avec et sans PI) sont des **données simulées**, produites pour illustrer le comportement attendu. Ils ne sont pas repris ici comme des résultats.
+- Analyse retenue pour le chauffage : un correcteur PI, sans terme dérivé, le système thermique étant lent et le capteur bruité.
 
-### Temperature Sensor Specifications
+## Limites
 
-- **Range**: -40°C to +125°C
-- **Resolution**: 9-bit to 12-bit configurable
-- **Accuracy**: ±0.5°C (typical)
-- **Interface**: I2C (TWI)
+- Régulation PI et logique de seuils du volet non implémentées dans le code disponible.
+- Dimensionnement de la partie puissance fait tardivement, sans calcul préalable des puissances dissipées (composants et MOSFET).
+- Isolation de la maquette éloignée d'un bâtiment réel ; constantes de temps très différentes.
+- Montage final câblé avant d'avoir été testé sur table, ce qui a retardé la mise au point.
+- Pistes notées par l'équipe : capteur de température dans la base, amélioration de l'isolation, panneaux solaires, mesure de luminosité et d'humidité.
 
----
+## Photos et conception
 
-## Contributing
+| | |
+|---|---|
+| ![Maquette en cours d'assemblage](assets/maquette_assemblage_bois.jpg) | ![Intérieur de la base](assets/base_alimentation_ventilateur.jpg) |
+| *Structure en bois en cours d'assemblage* | *Intérieur de la base : alimentation, ventilateur et carte* |
+| ![Vue 3D de la façade](assets/cao_facade_controle.jpg) | ![Vue 3D de l'enrouleur](assets/cao_enrouleur_volet.jpg) |
+| *Façade de contrôle, vue Fusion 360* | *Enrouleur du volet, vue Fusion 360* |
 
-Contributions and improvements are welcome. To contribute:
+## Crédits
 
-1. Test changes on physical hardware before submitting
-2. Document any new functions or hardware additions
-3. Provide both hardware schematics and code for complex features
-4. Include test sketches for new components
----
+Projet réalisé par un groupe de quatre étudiants de Sup Galilée. L'origine des fichiers `TCN75A.h` et `TCN75A.cpp` (pilote du capteur) est à préciser.
 
-## Contact
+## Licence
 
-**Repository**: [tedjelmoulksn-dotcom/Maison_a_basse_consommation](https://github.com/tedjelmoulksn-dotcom/Maison_a_basse_consommation)
-
-**Questions or Issues**: Open an issue on GitHub
-
----
-
-*Last Updated: July 2026 | Language: C++/Arduino*
+Aucune licence n'a été définie pour ce travail d'équipe.

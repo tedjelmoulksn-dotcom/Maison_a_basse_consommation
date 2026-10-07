@@ -5,23 +5,26 @@
 #include <Wire.h>   // library used with I2C protocol
 #include "TCN75A.h"
 #include <LiquidCrystal_I2C.h> // Nécessite l'installation de la bibliothèque LiquidCrystal_I2C 
-//#include <CheapStepper.h> //Librairie pour le module du moteur pas a pas 
+#include <CheapStepper.h> //Librairie pour le module du moteur pas a pas 
                                //dans le gestionnaire de bibliothèque intégré à Arduino IDE
 
-//const int position_defaut = 50;  // Position de référence du moteur a definir avec les test
+int nombre_de_pas = 4096*2;         // Nombre de pas pour un tour complet a tester surtout 
+int position_defaut = 0;          // Position initiale
 
-int pin_Peltier = 3;
-int pin_Resistance_Chauffante = 4;
-int pin_Soleil = 5;
-int pin_Ventilateur = 6;
-int pin_Bouton_Hiver = 7;
-int pin_Bouton_Ete = 8;
-int pin_Led_Hiver = 9;
-int pin_Led_Ete = 10;
-int pin_Potentiometre = 11;
-//CheapStepper stepper(1,2,3,4)// a choisir les pin convenable sinn c (8,9,10,11) par defaut;
+int pin_Peltier = 12; 
+int pin_Resistance_Chauffante = 11;
+int pin_Soleil = 10;
+int pin_sig_ServoMoteurSoleil = 4;
+int pin_Ventilateur = 13;
+int pin_Bouton_Hiver = 2;
+int pin_Bouton_Ete = 3;
+int pin_Led_Hiver = 50;
+int pin_Led_Ete = 37;
+int pin_Potentiometre = 0;
+CheapStepper stepper(32,28,30,22);// a choisir les pin convenable sinn c (8,9,10,11) par defaut;
 TCN75A tcn(0x48);
 LiquidCrystal_I2C lcd(0x27, 20, 4);
+int compteur = 0;
 
 void setup() {
   Serial.begin(9600);  // Initialise le port série
@@ -38,20 +41,54 @@ void setup() {
   pinMode(pin_Bouton_Ete, INPUT_PULLUP);
   pinMode(pin_Led_Hiver, OUTPUT);
   pinMode(pin_Led_Ete, OUTPUT);
+
+  // Enregistrer la position par défaut
+  position_defaut = stepper.getStep();
+  Serial.print("Position par défaut : ");
+  Serial.println(position_defaut);
 }
 
-void loop() {
-  // fonctionTest_TemperatureSensor();
-  // fonctionTest_MoteurPasAPas();
-  // fonctionTest_Peltier(255);
-  // fonctionTest_ResistanceChauffante(255);
-  // fonctionTest_Soleil(255);
-  // fonctionTest_Ventilateur(255);
-  // fonctionTest_Lcd();
-  // fonctionTest_Led();
-  // fonctionTest_Bouton();
-  // fonctionTest_Potentiometre();
- 
+void loop() {  
+  // Mode Ete
+  if(digitalRead(pin_Bouton_Ete) == LOW)
+  {
+    // fonctionTest_TemperatureSensor();
+    // fonctionTest_MoteurPasAPas();
+    // fonctionTest_Peltier(100);
+    fonctionTest_ResistanceChauffante(100);
+    fonctionTest_Soleil(50);
+    fonctionTest_Ventilateur(255);
+    // fonctionTest_Lcd();
+    // fonctionTest_Led();
+    // fonctionTest_Bouton();
+    // fonctionTest_Potentiometre();
+
+    digitalWrite(pin_Led_Ete, HIGH);
+    digitalWrite(pin_Led_Hiver, LOW);
+
+    // fonctionTest_Lcd();
+  }
+  // Mode Hiver
+  else if(digitalRead(pin_Bouton_Hiver) == LOW)
+  {
+    // fonctionTest_TemperatureSensor();
+    // fonctionTest_MoteurPasAPas();
+    // fonctionTest_Peltier(100);
+    fonctionTest_ResistanceChauffante(0);
+    fonctionTest_Soleil(0);
+    fonctionTest_Ventilateur(255);
+    // fonctionTest_Lcd();
+    // fonctionTest_Led();
+    // fonctionTest_Bouton();
+    // fonctionTest_Potentiometre();
+
+    digitalWrite(pin_Led_Hiver, HIGH);
+    digitalWrite(pin_Led_Ete, LOW);
+
+    // fonctionTest_Lcd();
+  }
+
+  fonctionProjet_TemperatureSensor();
 }
 
 /* ----- Début : FONCTIONS DU PROJET ----- */
@@ -82,9 +119,50 @@ void fonctionProjet_TemperatureSensor()
 {
   float t = tcn.readTemperature();
   
+  if((compteur == 1) && (t > 32.0))
+  {
+    fonctionProjet_MoteurPasAPas();
+    compteur = 2;
+  }
+
+  lcd.backlight();
+  // Envoi du message sur le LCD : ----->>>> (colonne, ligne)
+  lcd.setCursor(1,0);
+  lcd.print("Temperature : ");
+  lcd.setCursor(15, 0);
+  lcd.print(t);
+  lcd.setCursor(5, 1);
+  lcd.print("compteur = ");
+  lcd.setCursor(15, 1);
+  lcd.print(compteur);
+  delay(500);
+  lcd.clear();
+
   Serial.println("Temperature : ");
   Serial.println(t);
   delay(500);
+}
+
+void fonctionProjet_MoteurPasAPas()
+{
+  // DESCENTE : faire 4096 pas dans une direction
+  Serial.println("Descente...");
+  for (int i = 0; i < nombre_de_pas; i++) {
+    stepper.step(true);  // false = sens antihoraire
+  }
+
+  delay(2000); // Pause
+
+  // REMONTER : refaire le même nombre de pas dans l'autre sens
+  Serial.println("Remontée...");
+  for (int i = 0; i < nombre_de_pas; i++) {
+    stepper.step(false);  // true = sens horaire
+  }
+
+  delay(2000);
+
+  Serial.print("Position finale (devrait être la même que la position de départ) : ");
+  Serial.println(stepper.getStep());
 }
 
 /* ----- Fin : FONCTIONS DE TESTS DES COMPOSANTS ----- */
@@ -99,7 +177,7 @@ void fonctionTest_TemperatureSensor()
 }
 
 void fonctionTest_MoteurPasAPas()
-{/*
+{
   // Placer le moteur à la position de départ (960)
   stepper.moveTo(true, position_defaut);
   Serial.print("Position initiale définie à : ");
@@ -133,8 +211,6 @@ void fonctionTest_MoteurPasAPas()
 
   delay(1000);  // Pause avant de terminer
 }
-*/
-}
 
 void fonctionTest_Peltier(int valeur_PWM)
 {
@@ -159,7 +235,7 @@ void fonctionTest_Ventilateur(int valeur_PWM)
 void fonctionTest_Lcd()
 {
   lcd.backlight();
-  
+  lcd.clear();
   // Envoi du message sur le LCD
   lcd.setCursor(0,0);
   lcd.print("Test");
