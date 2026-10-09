@@ -4,6 +4,9 @@
 
 #include <Wire.h>   // library used with I2C protocol
 #include "TCN75A.h"
+#include "shutter_trigger.h"
+#include <math.h>
+#include <string.h>
 #include <LiquidCrystal_I2C.h> // Nécessite l'installation de la bibliothèque LiquidCrystal_I2C 
 #include <CheapStepper.h> //Librairie pour le module du moteur pas a pas 
                                //dans le gestionnaire de bibliothèque intégré à Arduino IDE
@@ -24,7 +27,7 @@ int pin_Potentiometre = 0;
 CheapStepper stepper(32,28,30,22);// a choisir les pin convenable sinn c (8,9,10,11) par defaut;
 TCN75A tcn(0x48);
 LiquidCrystal_I2C lcd(0x27, 20, 4);
-int compteur = 0;
+int compteur = 1; // Armed; rearm after cooling below the trigger hysteresis.
 
 void setup() {
   Serial.begin(9600);  // Initialise le port série
@@ -94,21 +97,23 @@ void loop() {
 /* ----- Début : FONCTIONS DU PROJET ----- */
 
 // Fonction permettant selon le composant, de lui envoyer une commande PWM
-void fonctionProjet_PWM(char* nom_composant, int valeur_PWM)
+void fonctionProjet_PWM(const char* nom_composant, int valeur_PWM)
 {
-  if(nom_composant == "PELTIER")
+  if (!nom_composant) return;
+  valeur_PWM = constrain(valeur_PWM, 0, 255);
+  if(strcmp(nom_composant, "PELTIER") == 0)
   {
     analogWrite(pin_Peltier, valeur_PWM);
   }
-  else if(nom_composant == "RESISTANCE")
+  else if(strcmp(nom_composant, "RESISTANCE") == 0)
   {
     analogWrite(pin_Resistance_Chauffante, valeur_PWM);
   }
-  else if(nom_composant == "SOLEIL")
+  else if(strcmp(nom_composant, "SOLEIL") == 0)
   {
     analogWrite(pin_Soleil, valeur_PWM);
   }
-  else if(nom_composant == "VENTILATEUR")
+  else if(strcmp(nom_composant, "VENTILATEUR") == 0)
   {
     analogWrite(pin_Ventilateur, valeur_PWM);
   }
@@ -119,10 +124,20 @@ void fonctionProjet_TemperatureSensor()
 {
   float t = tcn.readTemperature();
   
-  if((compteur == 1) && (t > 32.0))
-  {
+  if (!isfinite(t)) {
+    // Stop thermal loads on an invalid reading; keep ventilation available.
+    analogWrite(pin_Peltier, 0);
+    analogWrite(pin_Resistance_Chauffante, 0);
+    analogWrite(pin_Soleil, 0);
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Sensor read error");
+    Serial.println("Sensor read error: thermal loads disabled.");
+    delay(500);
+    return;
+  }
+  if (shutterCycleRequested(t, compteur)) {
     fonctionProjet_MoteurPasAPas();
-    compteur = 2;
   }
 
   lcd.backlight();
@@ -239,9 +254,9 @@ void fonctionTest_Lcd()
   // Envoi du message sur le LCD
   lcd.setCursor(0,0);
   lcd.print("Test");
-  lcd.setCursor(1,5);
+  lcd.setCursor(1,1);
   lcd.print("du");
-  lcd.setCursor(2,15);
+  lcd.setCursor(2,2);
   lcd.print("LCD");
   lcd.setCursor(3,0);
   lcd.print("Test I2C");

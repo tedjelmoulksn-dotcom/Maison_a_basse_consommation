@@ -25,7 +25,7 @@ class TCN75A{
   void begin(TwoWire &wire = Wire);
   
   /// @brief Read the temperature
-  /// @return The temperature value (in celsius)
+  /// @return Temperature in Celsius, or NAN on uninitialised/failed/short I2C reads.
   float readTemperature(); //read temperature as normal
 
   /// @brief Set the hysteresis temperature
@@ -76,6 +76,7 @@ class TCN75A{
   int8_t checkConfig(uint8_t op);
   
   private:
+  float readTemperatureRegister(uint8_t pointer, uint8_t low_mask);
   uint8_t readConfig();
   void writeConfig(uint8_t data);
   float getTemp(uint8_t p); //reducing nuisance
@@ -85,3 +86,4 @@ class TCN75A{
 };
 
 #endif
+

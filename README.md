@@ -46,7 +46,7 @@ Other team members led the control-panel design, halogen-lamp subsystem, Peltier
 | Cooling | Simulate winter conditions with a Peltier module | Test function available; calls disabled in the main loop |
 | Solar influence | Modulate lamp intensity and orientation | Lamp PWM commands present; servo signal pin declared but no servo-control code |
 | Ventilation | Distribute air and manage heat dissipation | Fan output commanded to its maximum PWM value in both mode branches |
-| Shutter | Open/close according to temperature and season | Movement routines present; temperature-triggered routine is not reached in the current control flow |
+| Shutter | Open/close according to temperature and season | Temperature-triggered down/up test cycle above 32 °C; rearms at or below 30 °C |
 | Regulation | PI/PID study and 21–23 °C target range | No closed-loop PI/PID controller implemented |
 | User controls | Select summer/winter scenarios | Active-low buttons and mode LEDs |
 
@@ -100,9 +100,9 @@ The bundled driver uses Arduino's `Wire` API. Its temperature-read path:
 2. writes the temperature-register pointer `0x00`;
 3. calls `endTransmission(false)` to retain the bus for the subsequent read;
 4. requests two bytes;
-5. interprets the first byte as a signed integer component;
-6. extracts the high nibble of the second byte as a fractional component;
-7. returns a floating-point temperature value.
+5. verifies acknowledgement, byte count and data availability;
+6. assembles the signed, left-aligned two-byte temperature register;
+7. decodes it in Celsius, returning `NAN` for an invalid transaction.
 
 The driver also exposes configuration-register, resolution, shutdown, alert-mode and threshold methods.
 
@@ -117,9 +117,11 @@ The application calls `begin()` but does not explicitly configure conversion res
 
 ### Driver Review
 
-Both `readTemperature()` and `getTemp()` declare an array with one element and then access `data[1]`. This is an out-of-bounds access and needs correction before relying on the readings.
+The corrected driver reads two scalar bytes, checks the transaction before decoding and handles two's-complement temperatures on either side of zero. The 12-bit temperature field uses the high nibble of the low byte; threshold registers retain their 0.5 °C resolution.
 
-The implementation also does not verify the I²C transaction status or received byte count. Temperature decoding should be checked against the sensor documentation and tested with known positive and negative encoded values after the buffer issue is corrected.
+On an invalid temperature, the application disables the heater, lamp and Peltier command outputs, reports the error and skips shutter movement. The fan retains its current ventilation command.
+
+Host regression tests cover positive and negative temperatures, both threshold-register addresses, an uninitialised driver, NACK, short reads and missing data. The decoding follows the [Microchip TCN75A data sheet](https://ww1.microchip.com/downloads/en/DeviceDoc/21935c.pdf).
 
 The header references [FaultyTwo's TCN75A Arduino library](https://github.com/FaultyTwo/TCN75A-arduino-lib). The bundled driver should be treated as referenced third-party code; no original-driver authorship is claimed here.
 
@@ -139,7 +141,7 @@ The summer branch has priority if both buttons are LOW. There is no persistent m
 
 The winter branch disabling the heater differs from the intended winter-heating strategy. This behaviour is documented as stored, rather than presented as a validated regulation policy.
 
-The generic `fonctionProjet_PWM()` dispatcher compares string pointers using `==`. A future implementation should use an enum or an explicit string-content comparison.
+The generic `fonctionProjet_PWM()` dispatcher compares string contents with `strcmp()`, checks for a null identifier and clamps the command to 0–255. Identifiers supplied from a separate character buffer therefore behave like string literals.
 
 ## Motorized Shutter
 
@@ -151,15 +153,11 @@ The exact step count per mechanical rotation and resulting shutter travel need c
 
 ### Current Trigger Condition
 
-The temperature routine calls the shutter sequence only when:
+The test-cycle trigger starts armed (`compteur = 1`). A valid temperature **above 32 °C** requests one down/up sequence and changes the state to 2. Further hot readings do not repeat the cycle. Cooling to **30 °C or below** rearms it; invalid readings leave the trigger unchanged.
 
-```c
-compteur == 1 && t > 32.0
-```
+[`shutter_trigger.h`](arduino/Projet_Maison_Energetique/shutter_trigger.h) separates this small state transition from the motor commands so its boundary and rearming behaviour can be tested independently.
 
-However, `compteur` is initialized to zero and is not set to one anywhere in the available integration sketch. The movement branch is therefore unreachable in its current form.
-
-The 32 °C test condition also differs from the intended 21–23 °C seasonal strategy. The code does not implement shutter homing, physical position feedback or end-stop handling.
+These thresholds belong to the shutter demonstration. The 21–23 °C range remains the thermal-control study's objective; this test cycle does not implement the seasonal regulator. Mechanical travel still depends on the configured step count and actual winding geometry.
 
 ## Thermal-Control Study
 
@@ -198,7 +196,7 @@ Stepper movement, when called, also uses blocking loops and delays. There is no 
 2. Install compatible `LiquidCrystal_I2C` and `CheapStepper` libraries.
 3. Open `arduino/Projet_Maison_Energetique/Projet_Maison_Energetique.ino`.
 4. Keep `TCN75A.h` and `TCN75A.cpp` alongside the sketch.
-5. Review the driver and control-flow findings before hardware use.
+5. Run the host regression tests with `make test` from the repository root.
 6. Check the actual wiring, peripheral addresses and power-stage design.
 7. Select the board and port, compile and upload.
 
@@ -207,6 +205,16 @@ The standalone temperature test may require the same sensor-driver files or a co
 Keep the board selection and compatible library versions with the build. Test acquisition and each actuator separately before exercising the integration sketch.
 
 ## Results and Engineering Lessons
+
+The current software correction is verified by host tests, using a fake I²C transport for repeatable register and error inputs:
+
+```bash
+make test
+make sanitize
+```
+
+These checks validate the sensor driver, shutter trigger and integration sketch with fake Arduino peripherals, including PWM string dispatch and disabling thermal loads on sensor failure. The Arduino Mega sketch and physical power/motor interfaces require their board toolchain and bench verification.
+
 
 The assembled model connects thermal sensing, logic-level PWM commands, power switching and mechanical shutter movement. Individual subsystem tests support the integration study; the report's seasonal simulations explain the intended control behaviour separately from the firmware test sequence.
 
@@ -223,9 +231,9 @@ The team identified two practical lessons:
 
 | Priority | Proposed work |
 |---|---|
-| Sensor reliability | Correct array bounds, verify byte counts and validate temperature decoding |
+| Sensor reliability | Signed decoding and I²C error handling implemented; regression tests included |
 | Mode logic | Introduce explicit states, debounce and defined output behaviour |
-| Shutter control | Calibrate travel, add homing/end stops and resolve the unreachable trigger |
+| Shutter control | Trigger and hysteresis implemented; calibrate travel and add physical position feedback |
 | Thermal regulation | Identify process dynamics, implement PI control and handle actuator saturation |
 | Scheduling | Replace blocking sequences with timed state transitions |
 | Power integration | Document supplies, load currents, MOSFET losses and heat removal |
@@ -258,3 +266,4 @@ The report and poster explain the system objectives and thermal-control study; t
 Developed by **Greg Alberts, Sarah Dahmoun, Hugo Lebaud and Tedj El Moulk Sinacer**, supervised by **Gabriel Dutier**.
 
 No project-wide licence has been specified for the team work. Third-party libraries retain their respective authorship and licence conditions.
+
