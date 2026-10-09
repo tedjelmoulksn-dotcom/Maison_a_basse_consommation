@@ -90,7 +90,7 @@ Pin assignments below are taken from the integration sketch.
 | LCD | I²C address `0x27`, configured as 20 columns × 4 rows |
 | Serial diagnostics | 9600 baud |
 
-The report describes a 100 W halogen lamp. Electrical load ratings, supply capacity and power-stage thermal margins must be established from the actual fitted components; they were not validated during this documentation update.
+The report describes a 100 W halogen lamp. Load current, supply capacity and MOSFET dissipation connect that component choice to the power-stage design; these values should be calculated for the actual fitted hardware.
 
 ## Temperature Acquisition and TCN75A Driver
 
@@ -167,7 +167,7 @@ The report discusses a thermal model using temperature, injected heater power, t
 
 The proportional term would respond to temperature error and the integral term would compensate persistent error. The report discusses limiting derivative action because of measurement noise and the slow process dynamics.
 
-This is a design study. The repository does not contain implemented PI gains, a sampled control law, saturation/anti-windup logic or experimentally identified thermal parameters.
+The PI work is the control-design part of the report. Moving from that study to the firmware requires process identification, a sampling period, tuned gains and saturation/anti-windup rules; the integration sketch currently exercises actuator commands directly.
 
 The small model's thermal mass, insulation and time constants differ from a full-size building. No building-scale energy-saving performance is inferred from the prototype.
 
@@ -204,13 +204,15 @@ Stepper movement, when called, also uses blocking loops and delays. There is no 
 
 The standalone temperature test may require the same sensor-driver files or a compatible installed library. Each test directory is a separate experiment.
 
-No compilation, upload or hardware tests were performed during this README update. Library versions and the original Arduino environment have not been pinned.
+Keep the board selection and compatible library versions with the build. Test acquisition and each actuator separately before exercising the integration sketch.
 
 ## Results and Engineering Lessons
 
+The assembled model connects thermal sensing, logic-level PWM commands, power switching and mechanical shutter movement. Individual subsystem tests support the integration study; the report's seasonal simulations explain the intended control behaviour separately from the firmware test sequence.
+
 The physical model was assembled and wired, and components were tested individually. The report states that late electrical-integration difficulties prevented complete experimental regulation trials.
 
-The report's summer and winter temperature tables are simulated illustrations. They do not establish settling time, overshoot, steady-state error or energy consumption for the assembled system.
+The summer/winter tables are simulated scenarios used to explain the intended thermal response. Evaluate an implemented regulator using measured temperature and command traces, with settling time, overshoot and steady-state error defined against the chosen setpoint.
 
 The team identified two practical lessons:
 
@@ -230,7 +232,7 @@ The team identified two practical lessons:
 | Reproducibility | Pin library versions and preserve the build configuration |
 | Validation | Log measured temperature, actuator commands and elapsed time under repeatable conditions |
 
-These are proposed improvements, not implemented features.
+These priorities describe the next engineering iteration.
 
 ## Project Gallery
 
@@ -249,7 +251,7 @@ These are proposed improvements, not implemented features.
 - [Enclosure design — Fusion 360](cad/coffret_maison_energetique_v6.f3d)
 - [Shutter winding mechanism — Fusion 360](cad/enrouleur_volet_moteur_pas_a_pas_v2.f3d)
 
-The report and poster describe the intended system; the source describes the preserved integration version. The report's cover contains inconsistent date/year labels, so no precise academic year is asserted here.
+The report and poster explain the system objectives and thermal-control study; the integration source shows the sensor and actuator test paths used in the demonstrator.
 
 ## Authors and Licensing
 
