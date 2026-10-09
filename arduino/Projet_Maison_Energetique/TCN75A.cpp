@@ -1,9 +1,7 @@
 #include "TCN75A.h"
-#include <math.h>
 
 TCN75A::TCN75A(uint8_t adr){
   _adr = adr;
-  _wire = 0;
 }
 
 void TCN75A::begin(TwoWire &wire){
@@ -12,23 +10,16 @@ void TCN75A::begin(TwoWire &wire){
 }
 
 float TCN75A::readTemperature(){
-  return readTemperatureRegister(0x00, 0xF0);
-}
-
-float TCN75A::readTemperatureRegister(uint8_t pointer, uint8_t low_mask){
-  if (!_wire) return NAN;
+  float data[1];
   _wire->beginTransmission(_adr);
-  _wire->write(pointer);
-  if (_wire->endTransmission(false) != 0) return NAN;
-  if (_wire->requestFrom(_adr, uint8_t(2)) != 2 || _wire->available() < 2)
-    return NAN;
-  int high = _wire->read();
-  int low = _wire->read();
-  if (high < 0 || low < 0) return NAN;
-  // Signed, left-aligned fixed-point register; 1 LSB of this word = 1/256 C.
-  int32_t raw = (int32_t(uint8_t(high)) << 8) | (uint8_t(low) & low_mask);
-  if (raw & 0x8000) raw -= 65536;
-  return float(raw) / 256.0f;
+  _wire->write(0x00);
+  _wire->endTransmission(false);
+  _wire->requestFrom(_adr,uint8_t(2)); //need 2 bytes
+  //force data to fit with int8_t then convert it to float
+  data[0] = float(int8_t(_wire->read()));
+  data[1] = float((uint8_t(_wire->read() >> 4)) / 16.0);
+  _wire->endTransmission();
+  return data[0] + data[1];
 }
 
 // set temps
@@ -79,7 +70,15 @@ float TCN75A::getHystTemp(){
 }
 
 float TCN75A::getTemp(uint8_t p){
-  return readTemperatureRegister(p, 0x80); // Threshold registers have 0.5 C steps.
+  int8_t data[1];
+  _wire->beginTransmission(_adr);
+  _wire->write(p); // THYST pointer
+  _wire->endTransmission(false);
+  _wire->requestFrom(_adr,uint8_t(2)); //need two bytes
+  data[0] = _wire->read(); //get first byte
+  data[1] = _wire->read() >> 7; //get second byte
+  _wire->endTransmission();
+  return float(data[0]) + (data[1] == 0x01 ? 0.5 : 0.0);
 }
 
 // configuration
@@ -157,4 +156,3 @@ int8_t TCN75A::checkConfig(uint8_t op){
       return bitRead(rbyte, op);
   }
 }
-
