@@ -1,6 +1,6 @@
 # Low-Energy House — Embedded Thermal Demonstrator
 
-An Arduino-based instrumentation project combining temperature acquisition, PWM actuator commands, a motorized roller shutter and a physical house model to explore thermal management under simulated summer and winter conditions.
+Arduino thermal demonstrator integrating temperature sensing, PWM loads and a motorised shutter.
 
 **Arduino C/C++ · I²C · PWM · Stepper Motors · Temperature Acquisition · Power Electronics · Mechanical Integration**
 
