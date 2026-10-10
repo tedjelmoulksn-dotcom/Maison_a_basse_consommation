@@ -2,6 +2,10 @@
 
 An Arduino-based house demonstrator integrating temperature measurement, thermal actuation and motorized mechanisms. The project connects embedded control software with an energy-efficiency study and a physical model.
 
+![Maison a basse consommation project overview](assets/maison_peinte_sur_base.jpg)
+
+*Assembled house model with its integrated control hardware.*
+
 ## Embedded architecture
 
 The firmware reads a **TCN75A temperature sensor over I²C** and presents information on a **20 × 4 I²C LCD**. Buttons select operating modes. GPIO and PWM outputs drive heating, a Peltier element, ventilation and a simulated sun source; a stepper motor and servo control the mechanical demonstration.
